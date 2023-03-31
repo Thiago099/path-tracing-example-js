@@ -120,85 +120,14 @@ function loadModels(modelPaths)
 	triangleMaterialMarkers = [];
 	uniqueMaterialTextures = [];
 
-	for (let i = 0; i < modelPaths.length; i++)
-	{
-		let modelPath = modelPaths[i];
-		console.log(`Loading model ${modelPath}`);
+		
+	prepareGeometryForPT();
 
-		gltfLoader.load(modelPath, function (meshGroup)
-		{
-			if (meshGroup.scene)
-				meshGroup = meshGroup.scene;
+	init();
 
-			let matrixStack = [];
-			let parent;
-			matrixStack.push(new THREE.Matrix4());
-			meshGroup.traverse(function (child)
-			{
-				if (child.isMesh)
-				{
-					if (parent !== undefined && parent.name !== child.parent.name)
-					{
-						matrixStack.pop();
-						parent = undefined;
-					}
-
-					child.geometry.applyMatrix4(child.matrix.multiply(matrixStack[matrixStack.length - 1]));
-
-					if (child.material.length > 0)
-					{
-						for (let i = 0; i < child.material.length; i++)
-							new MaterialObject(child.material[i], pathTracingMaterialList);
-					} 
-					else
-					{
-						new MaterialObject(child.material, pathTracingMaterialList);
-					}
-
-					if (child.geometry.groups.length > 0)
-					{
-						for (let i = 0; i < child.geometry.groups.length; i++)
-						{
-							triangleMaterialMarkers.push((triangleMaterialMarkers.length > 0 ? triangleMaterialMarkers[triangleMaterialMarkers.length - 1] : 0) + child.geometry.groups[i].count / 3);
-						}
-					} else
-					{
-						triangleMaterialMarkers.push((triangleMaterialMarkers.length > 0 ? triangleMaterialMarkers[triangleMaterialMarkers.length - 1] : 0) + child.geometry.index.count / 3);
-					}
-
-					meshes.push(child);
-				} else if (child.isObject3D)
-				{
-					if (parent !== undefined)
-						matrixStack.pop();
-
-					let matrixPeek = new THREE.Matrix4().copy(matrixStack[matrixStack.length - 1]).multiply(child.matrix);
-					matrixStack.push(matrixPeek);
-					parent = child;
-				}
-			}); // end meshGroup.traverse(function (child)
-
-			modelLoadedCount++;
-
-			if (modelLoadedCount == modelPaths.length)
-			{
-				var flattenedMeshList = [].concat.apply([], meshes);
-				// Prepare geometry for path tracing
-
-
-
-				prepareGeometryForPT(flattenedMeshList, pathTracingMaterialList, triangleMaterialMarkers);
-
-				init();
-
-				// Hide loading spinning and show menu
-				loadingSpinner.classList.add("hidden");
-				gui.domElement.classList.remove("hidden");
-			}
-
-		}); // end gltfLoader.load()
-
-	} // end for (let i = 0; i < modelPaths.length; i++)
+	// Hide loading spinning and show menu
+	loadingSpinner.classList.add("hidden");
+	gui.domElement.classList.remove("hidden");
 
 } // end function loadModels(modelPaths)
 
