@@ -314,36 +314,36 @@ function init()
 			event.preventDefault();
 		}, false);
 
-		document.body.addEventListener("click", function (event) 
-		{
-			if (!ableToEngagePointerLock)
-				return;
-			this.requestPointerLock = this.requestPointerLock || this.mozRequestPointerLock;
-			this.requestPointerLock();
-		}, false);
+		// document.body.addEventListener("click", function (event) 
+		// {
+		// 	if (!ableToEngagePointerLock)
+		// 		return;
+		// 	this.requestPointerLock = this.requestPointerLock || this.mozRequestPointerLock;
+		// 	this.requestPointerLock();
+		// }, false);
 
 
-		pointerlockChange = function (event)
-		{
-			if (document.pointerLockElement === document.body ||
-				document.mozPointerLockElement === document.body || document.webkitPointerLockElement === document.body)
-			{
-				document.addEventListener('keydown', onKeyDown, false);
-				document.addEventListener('keyup', onKeyUp, false);
-				isPaused = false;
-			}
-			else
-			{
-				document.removeEventListener('keydown', onKeyDown, false);
-				document.removeEventListener('keyup', onKeyUp, false);
-				isPaused = true;
-			}
-		};
+		// pointerlockChange = function (event)
+		// {
+		// 	if (document.pointerLockElement === document.body ||
+		// 		document.mozPointerLockElement === document.body || document.webkitPointerLockElement === document.body)
+		// 	{
+		// 		document.addEventListener('keydown', onKeyDown, false);
+		// 		document.addEventListener('keyup', onKeyUp, false);
+		// 		isPaused = false;
+		// 	}
+		// 	else
+		// 	{
+		// 		document.removeEventListener('keydown', onKeyDown, false);
+		// 		document.removeEventListener('keyup', onKeyUp, false);
+		// 		isPaused = true;
+		// 	}
+		// };
 
-		// Hook pointer lock state change events
-		document.addEventListener('pointerlockchange', pointerlockChange, false);
-		document.addEventListener('mozpointerlockchange', pointerlockChange, false);
-		document.addEventListener('webkitpointerlockchange', pointerlockChange, false);
+		// // Hook pointer lock state change events
+		// document.addEventListener('pointerlockchange', pointerlockChange, false);
+		// document.addEventListener('mozpointerlockchange', pointerlockChange, false);
+		// document.addEventListener('webkitpointerlockchange', pointerlockChange, false);
 
 	} // end if (mouseControl)
 
@@ -435,13 +435,35 @@ function initTHREEjs()
 	worldCamera = new THREE.PerspectiveCamera(60, document.body.clientWidth / document.body.clientHeight, 1, 1000);
 	pathTracingScene.add(worldCamera);
 
-	controls = new FirstPersonCameraControls(worldCamera);
+	//rotate camera
+	controls = new OrbitControls(worldCamera, canvas,()=>cameraIsMoving=true);
 
-	cameraControlsObject = controls.getObject();
-	cameraControlsYawObject = controls.getYawObject();
-	cameraControlsPitchObject = controls.getPitchObject();
 
-	pathTracingScene.add(cameraControlsObject);
+	//rotate the camera
+	//z move
+	var distance = 40; // desired distance
+    var vector = new THREE.Vector3();
+    vector.subVectors(worldCamera.position, controls.target); // vector from target to camera
+    vector.setLength(distance); // set vector length to desired distance
+    worldCamera.position.copy(controls.target).add(vector); // set camera position
+    controls.zoomSpeed = 2;
+	worldCamera.position.z = 50;
+	//rotation
+	
+
+	console.log("OrbitControls: ", OrbitControls);
+
+	//rotate camera
+
+	// controls = new FirstPersonCameraControls(worldCamera);
+
+	//rotate the camera
+
+	// cameraControlsObject = controls.getObject();
+	// cameraControlsYawObject = controls.getYawObject();
+	// cameraControlsPitchObject = controls.getPitchObject();
+
+	// pathTracingScene.add(cameraControlsObject);
 
 
 	// setup render targets...
@@ -627,8 +649,7 @@ function animate()
 
 	elapsedTime = clock.getElapsedTime() % 1000;
 
-	// reset flags
-	cameraIsMoving = false;
+
 
 	// if GUI has been used, update
 	if (needChangePixelResolution)
@@ -643,174 +664,25 @@ function animate()
 		cameraIsMoving = true;
 		windowIsBeingResized = false;
 	}
-
 	// check user controls
-	if (mouseControl)
-	{
-		// movement detected
-		if (oldYawRotation != cameraControlsYawObject.rotation.y ||
-			oldPitchRotation != cameraControlsPitchObject.rotation.x)
-		{
-			cameraIsMoving = true;
-		}
+	// if (mouseControl)
+	// {
+	// 	// movement detected
+	// 	if (oldYawRotation != cameraControlsYawObject.rotation.y ||
+	// 		oldPitchRotation != cameraControlsPitchObject.rotation.x)
+	// 	{
+	// 		cameraIsMoving = true;
+	// 	}
 
-		// save state for next frame
-		oldYawRotation = cameraControlsYawObject.rotation.y;
-		oldPitchRotation = cameraControlsPitchObject.rotation.x;
+	// 	// save state for next frame
+	// 	oldYawRotation = cameraControlsYawObject.rotation.y;
+	// 	oldPitchRotation = cameraControlsPitchObject.rotation.x;
 
-	} // end if (mouseControl)
+	// } // end if (mouseControl)
 
-	// if on mobile device, get input from the mobileJoystickControls
-	if (!mouseControl)
-	{
-
-		newDeltaX = joystickDeltaX * cameraRotationSpeed;
-
-		if (newDeltaX)
-		{
-			cameraIsMoving = true;
-			mobileControlsMoveX = oldDeltaX - newDeltaX;
-			// mobileJoystick X movement (left and right) affects camera rotation around the Y axis	
-			cameraControlsYawObject.rotation.y += (mobileControlsMoveX) * 0.01;
-		}
-
-		newDeltaY = joystickDeltaY * cameraRotationSpeed;
-
-		if (newDeltaY)
-		{
-			cameraIsMoving = true;
-			mobileControlsMoveY = oldDeltaY - newDeltaY;
-			// mobileJoystick Y movement (up and down) affects camera rotation around the X axis	
-			cameraControlsPitchObject.rotation.x += (mobileControlsMoveY) * 0.01;
-		}
-
-		// clamp the camera's vertical movement (around the x-axis) to the scene's 'ceiling' and 'floor',
-		// so you can't accidentally flip the camera upside down
-		cameraControlsPitchObject.rotation.x = Math.max(-PI_2, Math.min(PI_2, cameraControlsPitchObject.rotation.x));
-
-		// save state for next frame
-		oldDeltaX = newDeltaX;
-		oldDeltaY = newDeltaY;
-
-		newPinchWidthX = pinchWidthX;
-		newPinchWidthY = pinchWidthY;
-		pinchDeltaX = newPinchWidthX - oldPinchWidthX;
-		pinchDeltaY = newPinchWidthY - oldPinchWidthY;
-
-		if (Math.abs(pinchDeltaX) > Math.abs(pinchDeltaY))
-		{
-			if (pinchDeltaX < -1)
-			{
-				increaseFOV = true;
-				dollyCameraOut = true;
-			}
-			if (pinchDeltaX > 1)
-			{
-				decreaseFOV = true;
-				dollyCameraIn = true;
-			}
-		}
-
-		if (Math.abs(pinchDeltaY) >= Math.abs(pinchDeltaX))
-		{
-			if (pinchDeltaY > 1)
-			{
-				increaseAperture = true;
-			}
-			if (pinchDeltaY < -1)
-			{
-				decreaseAperture = true;
-			}
-		}
-
-		// save state for next frame
-		oldPinchWidthX = newPinchWidthX;
-		oldPinchWidthY = newPinchWidthY;
-
-	} // end if ( !mouseControl )
 
 	// this gives us a vector in the direction that the camera is pointing,
 	// which will be useful for moving the camera 'forward' and shooting projectiles in that direction
-	controls.getDirection(cameraDirectionVector);
-	cameraDirectionVector.normalize();
-	controls.getUpVector(cameraUpVector);
-	cameraUpVector.normalize();
-	controls.getRightVector(cameraRightVector);
-	cameraRightVector.normalize();
-
-	// the following gives us a rotation quaternion (4D vector), which will be useful for 
-	// rotating scene objects to match the camera's rotation
-	worldCamera.getWorldQuaternion(cameraWorldQuaternion);
-
-	if (useGenericInput)
-	{
-
-		if (!isPaused)
-		{
-			if ((keyPressed('KeyW') || button3Pressed) && !(keyPressed('KeyS') || button4Pressed))
-			{
-				cameraControlsObject.position.add(cameraDirectionVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if ((keyPressed('KeyS') || button4Pressed) && !(keyPressed('KeyW') || button3Pressed))
-			{
-				cameraControlsObject.position.sub(cameraDirectionVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if ((keyPressed('KeyA') || button1Pressed) && !(keyPressed('KeyD') || button2Pressed))
-			{
-				cameraControlsObject.position.sub(cameraRightVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if ((keyPressed('KeyD') || button2Pressed) && !(keyPressed('KeyA') || button1Pressed))
-			{
-				cameraControlsObject.position.add(cameraRightVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if (keyPressed('KeyQ') && !keyPressed('KeyZ'))
-			{
-				cameraControlsObject.position.add(cameraUpVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if (keyPressed('KeyZ') && !keyPressed('KeyQ'))
-			{
-				cameraControlsObject.position.sub(cameraUpVector.multiplyScalar(cameraFlightSpeed * frameTime));
-				cameraIsMoving = true;
-			}
-			if ((keyPressed('ArrowUp') || button5Pressed) && !(keyPressed('ArrowDown') || button6Pressed))
-			{
-				increaseFocusDist = true;
-			}
-			if ((keyPressed('ArrowDown') || button6Pressed) && !(keyPressed('ArrowUp') || button5Pressed))
-			{
-				decreaseFocusDist = true;
-			}
-			if (keyPressed('ArrowRight') && !keyPressed('ArrowLeft'))
-			{
-				increaseAperture = true;
-			}
-			if (keyPressed('ArrowLeft') && !keyPressed('ArrowRight'))
-			{
-				decreaseAperture = true;
-			}
-			if (keyPressed('KeyO') && canPress_O)
-			{
-				changeToOrthographicCamera = true;
-				canPress_O = false;
-			}
-			if (!keyPressed('KeyO'))
-				canPress_O = true;
-
-			if (keyPressed('KeyP') && canPress_P)
-			{
-				changeToPerspectiveCamera = true;
-				canPress_P = false;
-			}
-			if (!keyPressed('KeyP'))
-				canPress_P = true;
-		} // end if (!isPaused)
-
-	} // end if (useGenericInput)
 
 
 
@@ -937,7 +809,6 @@ function animate()
 	pathTracingUniforms.uRandomVec2.value.set(Math.random(), Math.random());
 
 	// CAMERA
-	cameraControlsObject.updateMatrixWorld(true);
 	worldCamera.updateMatrixWorld(true);
 	pathTracingUniforms.uCameraMatrix.value.copy(worldCamera.matrixWorld);
 
@@ -969,5 +840,8 @@ function animate()
 	stats.update();
 
 	requestAnimationFrame(animate);
+
+		// reset flags
+		cameraIsMoving = false;
 
 } // end function animate()

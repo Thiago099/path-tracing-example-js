@@ -365,12 +365,12 @@ function initSceneData()
 	worldCamera.fov = 60;
 	focusDistance = 100.0;
 
+
+
 	// position and orient camera
-	cameraControlsObject.position.set(-100, 120, 0);
-	// turn right
-	cameraControlsPitchObject.rotation.x = -0.95;
-	// look downward
-	cameraControlsYawObject.rotation.y = Math.PI / -1.333;
+	// cameraControlsObject.position.set(0.0, 0.0, 0.0);
+	// // look slightly downward
+	// cameraControlsPitchObject.rotation.x = -0.2;
 
 
 	// add this demo's custom menu items to the GUI
