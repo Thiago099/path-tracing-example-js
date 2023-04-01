@@ -20,12 +20,6 @@ let aabb_array;
 // Constants
 const loadingSpinner = document.querySelector("#loadingSpinner");
 
-/////////////////
-// Model setup //
-/////////////////
-let modelPaths = [
-	"models/00_001_011.gltf"
-];
 
 // Model/scene variables
 let modelScale = 10.0;
@@ -33,9 +27,6 @@ let modelRotationY = Math.PI; // in radians
 let modelPositionOffset = new THREE.Vector3();
 let sunDirection = new THREE.Vector3();
 
-// Loaders
-let gltfLoader = new GLTFLoader();
-let modelLoadedCount = 0;
 
 // GUI menu variables
 let hdr_ExposureController, hdr_ExposureObject;
@@ -96,7 +87,7 @@ function MaterialObject(material, pathTracingMaterialList)
 {
 	// a list of material types and their corresponding numbers are found in the 'pathTracingCommon.js' file
 	this.type = material.opacity < 1 ? 2 : 1; // default is 1 = diffuse opaque, 2 = glossy transparent, 4 = glossy opaque;
-	this.albedoTextureID = -1; // which diffuse map to use for model's color, '-1' = no textures are used
+	this.albedoTextureID = 0; // which diffuse map to use for model's color, '-1' = no textures are used
 	this.color = material.color ? material.color.copy(material.color) : new THREE.Color(1.0, 1.0, 1.0); // takes on different meanings, depending on 'type' above
 	this.roughness = material.roughness || 0.0; // 0.0 to 1.0 range, perfectly smooth to extremely rough
 	this.metalness = material.metalness || 0.0; // 0.0 to 1.0 range, usually either 0 or 1, either non-metal or metal
@@ -108,17 +99,12 @@ function MaterialObject(material, pathTracingMaterialList)
 
 
 
-function loadModels(modelPaths)
+function loadModels()
 {
 
 	console.time("LoadingGltf");
 	// Show the loading spinner
 	loadingSpinner.classList.remove("hidden");
-
-	meshes = [];
-	pathTracingMaterialList = [];
-	triangleMaterialMarkers = [];
-	uniqueMaterialTextures = [];
 
 		
 	prepareGeometryForPT();
@@ -136,10 +122,14 @@ function loadModels(modelPaths)
 
 
 
-function prepareGeometryForPT()
+async function prepareGeometryForPT()
 {
 
 	var cubeGeometry = new THREE.BoxGeometry( 1, 1, 1 );
+	//add texture
+
+	tex =  await new THREE.TextureLoader().load("textures/uvgrid.jpg");
+
 	//move up
 	cubeGeometry.translate(0, 0.5, 0);
 		
@@ -151,15 +141,14 @@ function prepareGeometryForPT()
 	// divide by 9 because of nonIndexed geometry (each triangle has 3 floats with each float constisting of 3 components)
 	let total_number_of_triangles = modelMesh.geometry.attributes.position.array.length / 9;
 
-	uniqueMaterialTextures = [];
+	uniqueMaterialTextures = [tex];
 	pathTracingMaterialList = [];
 
-	new MaterialObject({}, pathTracingMaterialList);
-	
-	triangleMaterialMarkers = triangleMaterialMarkers.map(x=>0)
+	var obj = new MaterialObject({}, pathTracingMaterialList);
+	obj.albedoTextureID = 0;
+	console.log(obj);
 
-
-
+	console.log(pathTracingMaterialList);
 
 	modelMesh.geometry.rotateY(modelRotationY);
 
@@ -387,7 +376,6 @@ function initSceneData()
 	// add this demo's custom menu items to the GUI
 	init_GUI();
 
-
 	// scene/demo-specific uniforms go here
 	pathTracingUniforms.tTriangleTexture = { value: triangleDataTexture };
 	pathTracingUniforms.tAABBTexture = { value: aabbDataTexture };
@@ -470,6 +458,6 @@ hdrTexture = hdrLoader.load(
 		texture.flipY = true;
 
 		// now that the HDR image has loaded, we can load the models
-		loadModels(modelPaths); // load models, init app, and start animating
+		loadModels(); // load models, init app, and start animating
 	}
 );

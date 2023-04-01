@@ -203,6 +203,7 @@ float SceneIntersect( )
 	      
         } // end while (TRUE)
 
+vec4 texColor;
 
 	if (triangleLookupNeeded == TRUE)
 	{
@@ -237,6 +238,8 @@ float SceneIntersect( )
 		hitType = int(vd6.x);
 		hitAlbedoTextureID = int(vd7.x);
 		hitObjectID = float(objectCount);
+		texColor = texture(tAlbedoTextures[0], hitUV);
+		hitColor = pow(texColor.rgb, vec3(2.2));	
 	}
 
 	return t;
@@ -379,11 +382,12 @@ vec3 CalculateRadiance( out vec3 objectNormal, out vec3 objectColor, out float o
 		// }
 
 
-
+	vec4 texColor;
 		if (hitType == DIFF) // Ideal DIFFUSE reflection
 		{
 			// if (diffuseCount == 0)
 			// 	objectColor = hitColor;
+
 
 			diffuseCount++;
 
